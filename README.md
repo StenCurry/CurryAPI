@@ -370,8 +370,5 @@ Cursor Session 是从 Cursor IDE 提取的认证令牌，本项目通过这些�
    cd frontend && npm run build:check
    ```
 
-## 特别致谢
-- [libaxuan/cursor2api-go](https://github.com/libaxuan/cursor2api-go) 为本项目提供了重要的参考与灵感，特此致谢。
-
 ## 许可证
 本项目采用 MIT 许可证，详见 [LICENSE](LICENSE)。
