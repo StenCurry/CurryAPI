@@ -1,4 +1,4 @@
-# Curry2API-go
+# Curry2API
 
 > 一个可自部署的多模型 AI 网关，兼容 OpenAI / Claude 接口，内置用户与配额管理、使用统计、管理后台与前端仪表盘。
 >
