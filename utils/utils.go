@@ -4,8 +4,7 @@ import (
 	"bufio"
 	"context"
 	"crypto/rand"
-	"cursor2api-go/middleware"
-	"cursor2api-go/models"
+	"Curry2API-go/models"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -60,17 +59,24 @@ func ParseSSELine(line string) string {
 }
 
 // WriteSSEEvent 写入SSE事件
+// 优化：立即刷新缓冲区以减少延迟
 func WriteSSEEvent(w http.ResponseWriter, event, data string) error {
+	// 使用单次写入减少系统调用
+	var buf strings.Builder
 	if event != "" {
-		if _, err := fmt.Fprintf(w, "event: %s\n", event); err != nil {
-			return err
-		}
+		buf.WriteString("event: ")
+		buf.WriteString(event)
+		buf.WriteString("\n")
 	}
-	if _, err := fmt.Fprintf(w, "data: %s\n\n", data); err != nil {
+	buf.WriteString("data: ")
+	buf.WriteString(data)
+	buf.WriteString("\n\n")
+	
+	if _, err := w.Write([]byte(buf.String())); err != nil {
 		return err
 	}
 
-	// 刷新缓冲区
+	// 立即刷新缓冲区以减少延迟
 	if flusher, ok := w.(http.Flusher); ok {
 		flusher.Flush()
 	}
@@ -80,14 +86,29 @@ func WriteSSEEvent(w http.ResponseWriter, event, data string) error {
 
 // StreamChatCompletion 处理流式聊天完成
 func StreamChatCompletion(c *gin.Context, chatGenerator <-chan interface{}) {
-	// 设置SSE头
-	c.Header("Content-Type", "text/event-stream")
-	c.Header("Cache-Control", "no-cache")
+	// 设置SSE头 - 关键配置以确保流式响应立即发送
+	c.Header("Content-Type", "text/event-stream; charset=utf-8")
+	c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
 	c.Header("Connection", "keep-alive")
 	c.Header("Access-Control-Allow-Origin", "*")
+	// 禁用Nginx/代理缓冲 - 这是关键！
+	c.Header("X-Accel-Buffering", "no")
+	// 禁用压缩以避免缓冲
+	c.Header("Content-Encoding", "identity")
+	// 设置Transfer-Encoding为chunked
+	c.Header("Transfer-Encoding", "chunked")
+	
+	// 立即刷新头部
+	if flusher, ok := c.Writer.(http.Flusher); ok {
+		flusher.Flush()
+	}
 
 	// 生成响应ID
 	responseID := GenerateChatCompletionID()
+	
+	// Track usage data as we stream
+	var accumulatedUsage models.Usage
+	var streamError error
 
 	// 处理流式数据
 	ctx := c.Request.Context()
@@ -95,6 +116,12 @@ func StreamChatCompletion(c *gin.Context, chatGenerator <-chan interface{}) {
 		select {
 		case <-ctx.Done():
 			logrus.Debug("Client disconnected during streaming")
+			// Track incomplete request if tracking function is available
+			if trackFunc, exists := c.Get("track_usage_func"); exists {
+				if fn, ok := trackFunc.(UsageTrackingFunc); ok {
+					fn(c, nil, 499, "Client disconnected")
+				}
+			}
 			return
 
 		case data, ok := <-chatGenerator:
@@ -105,6 +132,15 @@ func StreamChatCompletion(c *gin.Context, chatGenerator <-chan interface{}) {
 					WriteSSEEvent(c.Writer, "", string(jsonData))
 				}
 				WriteSSEEvent(c.Writer, "", "[DONE]")
+				
+				// Track successful streaming request if tracking function is available
+				if streamError == nil {
+					if trackFunc, exists := c.Get("track_usage_func"); exists {
+						if fn, ok := trackFunc.(UsageTrackingFunc); ok {
+							fn(c, &accumulatedUsage, http.StatusOK, "")
+						}
+					}
+				}
 				return
 			}
 
@@ -119,12 +155,22 @@ func StreamChatCompletion(c *gin.Context, chatGenerator <-chan interface{}) {
 				}
 
 			case models.Usage:
-				// 使用统计 - 通常在最后发送
+				// 使用统计 - 累积token使用情况
+				accumulatedUsage.PromptTokens += v.PromptTokens
+				accumulatedUsage.CompletionTokens += v.CompletionTokens
+				accumulatedUsage.TotalTokens += v.TotalTokens
 				continue
 
 			case error:
+				streamError = v
 				logrus.WithError(v).Error("Stream generator error")
 				WriteSSEEvent(c.Writer, "", "[DONE]")
+				// Track failed streaming request if tracking function is available
+				if trackFunc, exists := c.Get("track_usage_func"); exists {
+					if fn, ok := trackFunc.(UsageTrackingFunc); ok {
+						fn(c, nil, http.StatusInternalServerError, v.Error())
+					}
+				}
 				return
 
 			default:
@@ -134,10 +180,14 @@ func StreamChatCompletion(c *gin.Context, chatGenerator <-chan interface{}) {
 	}
 }
 
+// UsageTrackingFunc is a function type for tracking usage
+type UsageTrackingFunc func(c *gin.Context, usage *models.Usage, statusCode int, errorMsg string)
+
 // NonStreamChatCompletion 处理非流式聊天完成
 func NonStreamChatCompletion(c *gin.Context, chatGenerator <-chan interface{}) {
 	var fullContent strings.Builder
 	var usage models.Usage
+	var streamError error
 
 	// 收集所有数据
 	ctx := c.Request.Context()
@@ -149,6 +199,12 @@ func NonStreamChatCompletion(c *gin.Context, chatGenerator <-chan interface{}) {
 				"timeout_error",
 				"request_timeout",
 			))
+			// Track failed request if tracking function is available
+			if trackFunc, exists := c.Get("track_usage_func"); exists {
+				if fn, ok := trackFunc.(UsageTrackingFunc); ok {
+					fn(c, nil, http.StatusRequestTimeout, "Request timeout")
+				}
+			}
 			return
 
 		case data, ok := <-chatGenerator:
@@ -161,6 +217,16 @@ func NonStreamChatCompletion(c *gin.Context, chatGenerator <-chan interface{}) {
 					fullContent.String(),
 					usage,
 				)
+				
+				// Track successful request with usage data if tracking function is available
+				if streamError == nil {
+					if trackFunc, exists := c.Get("track_usage_func"); exists {
+						if fn, ok := trackFunc.(UsageTrackingFunc); ok {
+							fn(c, &usage, http.StatusOK, "")
+						}
+					}
+				}
+				
 				c.JSON(http.StatusOK, response)
 				return
 			}
@@ -171,7 +237,19 @@ func NonStreamChatCompletion(c *gin.Context, chatGenerator <-chan interface{}) {
 			case models.Usage:
 				usage = v
 			case error:
-				middleware.HandleError(c, v)
+				streamError = v
+				logrus.WithError(v).Error("Stream generator error")
+				c.JSON(http.StatusInternalServerError, models.NewErrorResponse(
+					"Internal server error",
+					"stream_error",
+					"",
+				))
+				// Track failed request if tracking function is available
+				if trackFunc, exists := c.Get("track_usage_func"); exists {
+					if fn, ok := trackFunc.(UsageTrackingFunc); ok {
+						fn(c, nil, http.StatusInternalServerError, v.Error())
+					}
+				}
 				return
 			}
 		}
@@ -212,12 +290,21 @@ func SafeStreamWrapper(handler func(*gin.Context, <-chan interface{}), c *gin.Co
 
 	firstItem, ok := <-chatGenerator
 	if !ok {
-		middleware.HandleError(c, middleware.NewCursorWebError(http.StatusInternalServerError, "empty stream"))
+		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(
+			"Empty stream",
+			"empty_stream",
+			"",
+		))
 		return
 	}
 
 	if err, isErr := firstItem.(error); isErr {
-		middleware.HandleError(c, err)
+		logrus.WithError(err).Error("Stream error")
+		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(
+			err.Error(),
+			"stream_error",
+			"",
+		))
 		return
 	}
 
@@ -260,19 +347,28 @@ func CreateHTTPClient(timeout time.Duration) *http.Client {
 }
 
 // ReadSSEStream 读取SSE流
+// 优化：使用更大的缓冲区和更高效的读取方式
 func ReadSSEStream(ctx context.Context, resp *http.Response, output chan<- interface{}) error {
-	scanner := bufio.NewScanner(resp.Body)
-	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+	// 使用更大的缓冲区以提高读取效率
+	reader := bufio.NewReaderSize(resp.Body, 128*1024) // 128KB 缓冲区
 	defer resp.Body.Close()
 
-	for scanner.Scan() {
+	for {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
 		}
 
-		line := scanner.Text()
+		// 读取一行数据
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
+
 		data := ParseSSELine(line)
 		if data == "" {
 			continue
@@ -303,18 +399,26 @@ func ReadSSEStream(ctx context.Context, resp *http.Response, output chan<- inter
 					CompletionTokens: eventData.MessageMetadata.Usage.OutputTokens,
 					TotalTokens:      eventData.MessageMetadata.Usage.TotalTokens,
 				}
-				output <- usage
+				select {
+				case output <- usage:
+				case <-ctx.Done():
+					return ctx.Err()
+				}
 			}
-			return nil
+			// 不要在这里返回！继续读取可能还有更多内容
+			// Cursor API 可能在长回答中发送多个 finish 事件
+			continue
 
 		default:
 			if eventData.Delta != "" {
-				output <- eventData.Delta
+				select {
+				case output <- eventData.Delta:
+				case <-ctx.Done():
+					return ctx.Err()
+				}
 			}
 		}
 	}
-
-	return scanner.Err()
 }
 
 // ValidateModel 验证模型名称

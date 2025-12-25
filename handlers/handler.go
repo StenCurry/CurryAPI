@@ -1,11 +1,13 @@
 package handlers
 
 import (
-	"cursor2api-go/config"
-	"cursor2api-go/middleware"
-	"cursor2api-go/models"
-	"cursor2api-go/services"
-	"cursor2api-go/utils"
+	"bytes"
+	"io"
+	"Curry2API-go/config"
+	"Curry2API-go/middleware"
+	"Curry2API-go/models"
+	"Curry2API-go/services"
+	"Curry2API-go/utils"
 	"net/http"
 	"os"
 	"time"
@@ -43,7 +45,7 @@ func (h *Handler) ListModels(c *gin.Context) {
 			ID:      modelID,
 			Object:  "model",
 			Created: time.Now().Unix(),
-			OwnedBy: "cursor2api",
+			OwnedBy: "Curry2API",
 		}
 		
 		// 如果找到模型配置，添加max_tokens和context_window信息
@@ -65,6 +67,23 @@ func (h *Handler) ListModels(c *gin.Context) {
 
 // ChatCompletions 处理聊天完成请求
 func (h *Handler) ChatCompletions(c *gin.Context) {
+	// Capture request start time for usage tracking
+	requestStartTime := time.Now()
+	
+	// 读取原始请求体用于调试
+	bodyBytes, _ := c.GetRawData()
+	bodyStr := string(bodyBytes)
+	if len(bodyStr) > 500 {
+		bodyStr = bodyStr[:500] + "... (truncated)"
+	}
+	logrus.WithFields(logrus.Fields{
+		"path": c.Request.URL.Path,
+		"body": bodyStr,
+	}).Debug("Received ChatCompletions request")
+	
+	// 重新设置请求体
+	c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+	
 	var request models.ChatCompletionRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		logrus.WithError(err).Error("Failed to bind request")
@@ -76,14 +95,63 @@ func (h *Handler) ChatCompletions(c *gin.Context) {
 		return
 	}
 
+	// 如果使用 instructions 字段（Codex CLI），转换为 messages 格式
+	if request.Instructions != "" && len(request.Messages) == 0 {
+		logrus.Debug("Converting instructions to messages format for Codex CLI")
+		request.Messages = []models.Message{
+			{
+				Role:    "user",
+				Content: request.Instructions,
+			},
+		}
+		// Codex CLI 的流式响应格式不兼容，暂时禁用流式
+		if request.Stream {
+			logrus.Debug("Disabling stream for Codex CLI (format incompatibility)")
+			request.Stream = false
+		}
+	}
+
 	// 验证模型
 	if !h.config.IsValidModel(request.Model) {
 		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			"Invalid model specified",
+			"Invalid model specified: "+request.Model,
 			"invalid_request_error",
 			"model_not_found",
 		))
 		return
+	}
+
+	// Check token model access restriction
+	// Requirements: 14.3
+	apiKey, _ := c.Get("api_key")
+	if apiKey != nil {
+		km := middleware.GetKeyManager()
+		if err := km.CheckTokenModelAccess(apiKey.(string), request.Model); err != nil {
+			if err == middleware.ErrModelNotAllowed {
+				logrus.WithFields(logrus.Fields{
+					"model":   request.Model,
+					"api_key": middleware.MaskKey(apiKey.(string)),
+				}).Warn("Model access denied for token")
+				c.JSON(http.StatusForbidden, models.NewErrorResponse(
+					"Model not allowed - this token does not have access to model: "+request.Model,
+					"forbidden",
+					"model_not_allowed",
+				))
+				return
+			}
+		}
+	}
+
+	// 标准化模型名称（将完整标识符映射到配置中的简短名称）
+	originalModel := request.Model
+	request.Model = h.config.NormalizeModelName(request.Model)
+	
+	// 如果模型名称被标准化，记录日志
+	if originalModel != request.Model {
+		logrus.WithFields(logrus.Fields{
+			"original_model":   originalModel,
+			"normalized_model": request.Model,
+		}).Debug("Model name normalized")
 	}
 
 	// 验证消息
@@ -98,13 +166,40 @@ func (h *Handler) ChatCompletions(c *gin.Context) {
 
 	// 验证并调整max_tokens参数
 	request.MaxTokens = models.ValidateMaxTokens(request.Model, request.MaxTokens)
+	
+	// Extract user and token info for usage tracking
+	usageInfo, err := utils.ExtractUsageFromContext(c)
+	if err != nil {
+		logrus.WithError(err).Warn("Failed to extract usage context info")
+		// Continue processing - usage tracking is optional
+	}
+	
+	// Store usage info and request details in context for downstream handlers
+	c.Set("request_start_time", requestStartTime)
+	c.Set("request_model", request.Model)
+	if usageInfo != nil {
+		c.Set("usage_info", usageInfo)
+	}
+	
+	// Set the tracking function in context
+	c.Set("track_usage_func", utils.UsageTrackingFunc(trackUsageFromContext))
 
 	// 调用Cursor服务
-	chatGenerator, err := h.cursorService.ChatCompletion(c.Request.Context(), &request)
+	chatGenerator, session, err := h.cursorService.ChatCompletion(c.Request.Context(), &request)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to create chat completion")
 		middleware.HandleError(c, err)
 		return
+	}
+
+	// 设置 cursor_session 到上下文中，用于使用统计
+	if session != nil && session.Email != "" {
+		c.Set("cursor_session", session.Email)
+		logrus.Debugf("Using Cursor session: %s", session.Email)
+	} else {
+		// 使用 x-is-human 方式时，记录特殊标识符
+		c.Set("cursor_session", "x-is-human-fallback")
+		logrus.Debug("Using x-is-human fallback method")
 	}
 
 	// 根据是否流式返回不同响应
@@ -127,7 +222,7 @@ func (h *Handler) ServeDocs(c *gin.Context) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cursor2API - Go Version</title>
+    <title>Curry2API - Go Version</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -175,7 +270,7 @@ func (h *Handler) ServeDocs(c *gin.Context) {
 </head>
 <body>
     <div class="container">
-        <h1>🚀 Cursor2API - Go Version</h1>
+        <h1>🚀 Curry2API - Go Version</h1>
         
         <div class="info">
             <p><strong>Status:</strong> <span class="status-ok">✅ Running</span></p>
@@ -208,7 +303,7 @@ func (h *Handler) ServeDocs(c *gin.Context) {
         
         <div class="info">
             <h3>💻 Example Usage:</h3>
-            <pre><code>curl -X POST http://localhost:8002/v1/chat/completions \
+            <pre><code>curl -X POST http://localhost:5173/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer 0000" \
   -d '{
@@ -220,7 +315,7 @@ func (h *Handler) ServeDocs(c *gin.Context) {
         </div>
         
         <div class="info">
-            <p><strong>Repository:</strong> <a href="https://github.com/cursor2api/cursor2api-go">cursor2api-go</a></p>
+            <p><strong>Repository:</strong> <a href="https://github.com/Curry2API/Curry2API-go">Curry2API-go</a></p>
             <p><strong>Documentation:</strong> OpenAI API compatible</p>
         </div>
     </div>

@@ -17,7 +17,7 @@ RUN go mod download
 COPY . .
 
 # 构建应用
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o cursor2api-go .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o Curry2API-go .
 
 # 运行阶段
 FROM alpine:latest
@@ -31,7 +31,7 @@ RUN adduser -D -g '' appuser
 WORKDIR /root/
 
 # 从构建阶段复制二进制文件
-COPY --from=builder /app/cursor2api-go .
+COPY --from=builder /app/Curry2API-go .
 
 # 复制静态文件
 COPY --from=builder /app/static ./static
@@ -47,7 +47,7 @@ EXPOSE 8002
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8002/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:5173/health || exit 1
 
 # 启动应用
-CMD ["./cursor2api-go"]
+CMD ["./Curry2API-go"]

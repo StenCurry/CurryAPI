@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"cursor2api-go/models"
+	"Curry2API-go/models"
 	"net/http"
 
 	"github.com/gin-gonic/gin"

@@ -7,14 +7,31 @@ import (
 
 // ChatCompletionRequest OpenAI聊天完成请求
 type ChatCompletionRequest struct {
-	Model       string    `json:"model" binding:"required"`
-	Messages    []Message `json:"messages" binding:"required"`
-	Stream      bool      `json:"stream,omitempty"`
-	Temperature *float64  `json:"temperature,omitempty"`
-	MaxTokens   *int      `json:"max_tokens,omitempty"`
-	TopP        *float64  `json:"top_p,omitempty"`
-	Stop        []string  `json:"stop,omitempty"`
-	User        string    `json:"user,omitempty"`
+	Model        string    `json:"model" binding:"required"`
+	Messages     []Message `json:"messages"` // 可选，Codex CLI 不使用
+	Instructions string    `json:"instructions,omitempty"` // Codex CLI 使用此字段
+	Stream       bool      `json:"stream,omitempty"`
+	Temperature  *float64  `json:"temperature,omitempty"`
+	MaxTokens    *int      `json:"max_tokens,omitempty"`
+	TopP         *float64  `json:"top_p,omitempty"`
+	Stop         []string  `json:"stop,omitempty"`
+	User         string    `json:"user,omitempty"`
+	Tools        []Tool    `json:"tools,omitempty"`        // 工具定义
+	ToolChoice   interface{} `json:"tool_choice,omitempty"` // 工具选择策略
+}
+
+// Tool OpenAI工具定义
+type Tool struct {
+	Type     string              `json:"type"` // "function"
+	Function *FunctionDefinition `json:"function,omitempty"`
+}
+
+// FunctionDefinition 函数定义
+type FunctionDefinition struct {
+	Name        string                 `json:"name"`
+	Description string                 `json:"description,omitempty"`
+	Parameters  map[string]interface{} `json:"parameters,omitempty"`
+	Strict      bool                   `json:"strict,omitempty"`
 }
 
 // Message 消息结构
@@ -138,6 +155,7 @@ type CursorRequest struct {
 	ID       string          `json:"id"`
 	Messages []CursorMessage `json:"messages"`
 	Trigger  string          `json:"trigger"`
+	Tools    []Tool          `json:"tools,omitempty"`    // 工具定义
 }
 
 // CursorEventData Cursor事件数据
@@ -207,46 +225,43 @@ func (m *Message) GetStringContent() string {
 }
 
 // ToCursorMessages 将OpenAI消息转换为Cursor格式
+// 注意：Cursor API 要求对话必须以用户消息开始，所以系统消息会被合并到第一条用户消息中
 func ToCursorMessages(messages []Message, systemPromptInject string) []CursorMessage {
 	var result []CursorMessage
-
-	// 处理系统提示注入
+	var systemContent string
+	
+	// 收集系统提示内容
+	if len(messages) > 0 && messages[0].Role == "system" {
+		systemContent = messages[0].GetStringContent()
+		messages = messages[1:] // 跳过系统消息
+	}
+	
+	// 添加注入的系统提示
 	if systemPromptInject != "" {
-		if len(messages) > 0 && messages[0].Role == "system" {
-			// 如果第一条已经是系统消息，追加注入内容
-			content := messages[0].GetStringContent()
-			content += "\n" + systemPromptInject
-			result = append(result, CursorMessage{
-				Role: "system",
-				Parts: []CursorPart{
-					{Type: "text", Text: content},
-				},
-			})
-			messages = messages[1:] // 跳过第一条消息
+		if systemContent != "" {
+			systemContent += "\n" + systemPromptInject
 		} else {
-			// 如果第一条不是系统消息或没有消息，插入新的系统消息
-			result = append(result, CursorMessage{
-				Role: "system",
-				Parts: []CursorPart{
-					{Type: "text", Text: systemPromptInject},
-				},
-			})
+			systemContent = systemPromptInject
 		}
-	} else if len(messages) > 0 && messages[0].Role == "system" {
-		// 如果有系统消息但没有注入内容，直接添加
-		result = append(result, CursorMessage{
-			Role: "system",
-			Parts: []CursorPart{
-				{Type: "text", Text: messages[0].GetStringContent()},
-			},
-		})
-		messages = messages[1:] // 跳过第一条消息
 	}
 
 	// 转换其余消息
+	firstUserFound := false
 	for _, msg := range messages {
 		if msg.Role == "" {
 			continue // 跳过空消息
+		}
+
+		msgContent := msg.GetStringContent()
+		
+		// 如果有系统内容，将其作为上下文添加到第一条用户消息前面
+		// 不使用明显的标签，避免模型重复回答
+		if !firstUserFound && msg.Role == "user" && systemContent != "" {
+			// 系统内容作为隐式上下文，用户消息紧随其后
+			msgContent = systemContent + "\n\n---\n\n" + msgContent
+			firstUserFound = true
+		} else if msg.Role == "user" {
+			firstUserFound = true
 		}
 
 		cursorMsg := CursorMessage{
@@ -254,11 +269,21 @@ func ToCursorMessages(messages []Message, systemPromptInject string) []CursorMes
 			Parts: []CursorPart{
 				{
 					Type: "text",
-					Text: msg.GetStringContent(),
+					Text: msgContent,
 				},
 			},
 		}
 		result = append(result, cursorMsg)
+	}
+	
+	// 如果没有用户消息但有系统内容，创建一个包含系统内容的用户消息
+	if len(result) == 0 && systemContent != "" {
+		result = append(result, CursorMessage{
+			Role: "user",
+			Parts: []CursorPart{
+				{Type: "text", Text: systemContent},
+			},
+		})
 	}
 
 	return result

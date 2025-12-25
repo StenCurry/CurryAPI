@@ -6,8 +6,8 @@
 *.dylib
 
 # Go build output
-cursor2api-go
-cursor2api-go.exe
+Curry2API-go
+Curry2API-go.exe
 
 # Test binary, built with `go test -c`
 *.test

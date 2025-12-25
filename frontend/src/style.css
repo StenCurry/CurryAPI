@@ -1,0 +1,756 @@
+/* ============================================
+   CSS Variable System - 现代简约设计系统 v2.0
+   ============================================ */
+
+:root {
+  /* 主色系 - Indigo/Blue */
+  --color-primary: #4f46e5; /* Indigo 600 */
+  --color-primary-hover: #4338ca; /* Indigo 700 */
+  --color-primary-active: #3730a3; /* Indigo 800 */
+  --color-primary-light: rgba(79, 70, 229, 0.1);
+  --color-primary-lighter: rgba(79, 70, 229, 0.05);
+  
+  /* 语义色 */
+  --color-success: #10b981; /* Emerald 500 */
+  --color-success-hover: #059669;
+  --color-success-light: rgba(16, 185, 129, 0.1);
+  
+  --color-warning: #f59e0b; /* Amber 500 */
+  --color-warning-hover: #d97706;
+  --color-warning-light: rgba(245, 158, 11, 0.1);
+  
+  --color-error: #ef4444; /* Red 500 */
+  --color-error-hover: #dc2626;
+  --color-error-light: rgba(239, 68, 68, 0.1);
+  
+  --color-info: #06b6d4; /* Cyan 500 */
+  --color-info-hover: #0891b2;
+  --color-info-light: rgba(6, 182, 212, 0.1);
+  
+  /* 亮色主题背景色 - Slate/Gray */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc; /* Slate 50 */
+  --bg-tertiary: #f1f5f9;  /* Slate 100 */
+  --bg-card: rgba(255, 255, 255, 0.8);
+  --bg-hover: #f1f5f9;
+  --bg-active: #e2e8f0;
+  
+  /* 亮色主题文字颜色 */
+  --text-primary: #0f172a;   /* Slate 900 */
+  --text-secondary: #475569; /* Slate 600 */
+  --text-muted: #94a3b8;     /* Slate 400 */
+  --text-inverse: #ffffff;
+  
+  /* 边框 */
+  --border-color: #e2e8f0;       /* Slate 200 */
+  --border-color-light: #f1f5f9; /* Slate 100 */
+  --border-color-hover: #cbd5e1; /* Slate 300 */
+  
+  /* 圆角 */
+  --border-radius-sm: 6px;
+  --border-radius: 10px;
+  --border-radius-md: 14px;
+  --border-radius-lg: 20px;
+  --border-radius-full: 9999px;
+  
+  /* 阴影 - 更柔和 */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-glow: 0 0 15px rgba(79, 70, 229, 0.3);
+  
+  /* 磨砂玻璃效果 */
+  --backdrop-blur: blur(12px);
+  --backdrop-blur-lg: blur(20px);
+  
+  /* 过渡动画 */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* 间距 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+  
+  /* 字体 - Inter 优先 */
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  line-height: 1.6;
+  font-weight: 400;
+  color: var(--text-primary);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 暗色主题变量 - 深度优化 */
+.dark-theme,
+body.dark-theme {
+  --color-primary: #6366f1; /* Indigo 500 */
+  --color-primary-hover: #818cf8; /* Indigo 400 */
+  --color-primary-active: #a5b4fc;
+  
+  --bg-primary: #020617;   /* Slate 950 */
+  --bg-secondary: #0f172a; /* Slate 900 */
+  --bg-tertiary: #1e293b;  /* Slate 800 */
+  --bg-card: rgba(15, 23, 42, 0.7);
+  --bg-hover: #1e293b;
+  --bg-active: #334155;
+  
+  --text-primary: #f8fafc;   /* Slate 50 */
+  --text-secondary: #94a3b8; /* Slate 400 */
+  --text-muted: #64748b;     /* Slate 500 */
+  
+  --border-color: #1e293b;       /* Slate 800 */
+  --border-color-light: #0f172a; /* Slate 900 */
+  --border-color-hover: #334155; /* Slate 700 */
+  
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+  --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.2);
+}
+
+
+/* ============================================
+   基础样式重置与优化
+   ============================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-primary);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text-primary);
+  position: relative;
+  overflow-x: hidden;
+  transition: background-color var(--transition-normal), color var(--transition-normal);
+}
+
+#app {
+  min-height: 100vh;
+  position: relative;
+}
+
+/* ============================================
+   全局工具类
+   ============================================ */
+
+/* 磨砂玻璃面板 - 核心组件 */
+.glass-panel {
+  background: var(--bg-card);
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+}
+
+.glass-panel:hover {
+  border-color: var(--border-color-hover);
+  box-shadow: var(--shadow-md);
+}
+
+/* 卡片基础样式 */
+.glass-card {
+  background: var(--bg-card);
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal), border-color var(--transition-normal);
+}
+
+/* 渐变文字 */
+.gradient-text-primary {
+  background: linear-gradient(135deg, var(--color-primary) 0%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+.dark-theme .gradient-text-primary {
+  background: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* 弹性布局工具 */
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ============================================
+   Naive UI 组件深度覆盖
+   ============================================ */
+
+.n-layout,
+.n-layout-content,
+.n-layout-scroll-container {
+  background: transparent !important;
+}
+
+/* Card */
+.n-card {
+  background-color: var(--bg-card) !important;
+  border-radius: var(--border-radius-md) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: var(--shadow-sm) !important;
+  transition: box-shadow var(--transition-normal) !important;
+}
+
+.n-card:hover {
+  box-shadow: var(--shadow-md) !important;
+}
+
+/* Button */
+.n-button {
+  font-weight: 500 !important;
+  border-radius: var(--border-radius) !important;
+  transition: all var(--transition-fast) !important;
+}
+
+.n-button--primary-type {
+  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2) !important;
+}
+
+.n-button--primary-type:hover {
+  box-shadow: 0 4px 8px rgba(79, 70, 229, 0.3) !important;
+  transform: translateY(-1px);
+}
+
+/* Input */
+.n-input {
+  border-radius: var(--border-radius) !important;
+  background-color: var(--bg-secondary) !important;
+}
+
+.n-input:focus-within {
+  box-shadow: 0 0 0 2px var(--color-primary-light) !important;
+  border-color: var(--color-primary) !important;
+  background-color: var(--bg-primary) !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color-hover);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* ============================================
+   背景样式 - 动态而简约
+   ============================================ */
+
+body.light-theme {
+  background:
+    radial-gradient(120% 120% at 10% 10%, rgba(79, 70, 229, 0.08), transparent 45%),
+    radial-gradient(100% 100% at 90% 90%, rgba(6, 182, 212, 0.06), transparent 40%),
+    linear-gradient(180deg, #f8fafc 0%, #eef2ff 40%, #f8fafc 100%);
+  background-attachment: fixed;
+}
+
+body.dark-theme {
+  background:
+    radial-gradient(120% 120% at 12% 12%, rgba(99, 102, 241, 0.12), transparent 45%),
+    radial-gradient(100% 100% at 88% 88%, rgba(14, 165, 233, 0.08), transparent 40%),
+    linear-gradient(180deg, #020617 0%, #0b1224 40%, #020617 100%);
+  background-attachment: fixed;
+}
+
+/* 兼容性保留 - 确保不破坏现有结构 */
+.ai-tech-background {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: -1 !important;
+  pointer-events: none;
+}
+
+/* ============================================
+   动画工具类
+   ============================================ */
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.slide-up {
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 玻璃侧边栏特殊处理 */
+.glass-sider {
+  background: var(--bg-card) !important;
+  backdrop-filter: var(--backdrop-blur-lg) !important;
+  border-right: 1px solid var(--border-color) !important;
+}
+
+/* 玻璃头部特殊处理 */
+.glass-header {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: var(--backdrop-blur-lg) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+.dark-theme .glass-header {
+  background: rgba(15, 23, 42, 0.7) !important;
+}
+
+body.light-theme .logo-text,
+body.light-theme .logo-main {
+  background: linear-gradient(135deg, var(--color-primary) 0%, #2563eb 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+body.dark-theme .logo-text,
+body.dark-theme .logo-main {
+  background: linear-gradient(135deg, #60a5fa 0%, #93c5fd 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.logo-sub {
+  color: var(--text-muted) !important;
+}
+
+/* 菜单项样式 */
+.modern-menu .n-menu-item,
+.glass-menu .n-menu-item {
+  color: var(--text-secondary) !important;
+  border-radius: var(--border-radius) !important;
+  margin: 2px 8px !important;
+  transition: all var(--transition-fast) !important;
+}
+
+.modern-menu .n-menu-item:hover,
+.glass-menu .n-menu-item:hover {
+  background: var(--bg-hover) !important;
+  color: var(--text-primary) !important;
+}
+
+.modern-menu .n-menu-item--selected,
+.glass-menu .n-menu-item--selected {
+  background: var(--color-primary) !important;
+  color: var(--text-inverse) !important;
+}
+
+.modern-menu .n-menu-item-content__icon,
+.glass-menu .n-menu-item-content__icon {
+  color: var(--text-muted) !important;
+}
+
+.modern-menu .n-menu-item--selected .n-menu-item-content__icon,
+.glass-menu .n-menu-item--selected .n-menu-item-content__icon {
+  color: var(--text-inverse) !important;
+}
+
+.modern-menu .n-menu-item-content-header,
+.glass-menu .n-menu-item-content-header {
+  color: inherit !important;
+}
+
+/* 侧边栏底部 */
+.sider-footer {
+  border-top: 1px solid var(--border-color) !important;
+}
+
+.version-badge {
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius-sm) !important;
+}
+
+.version-text {
+  color: var(--text-muted) !important;
+}
+
+/* ============================================
+   头部导航样式 - 简约设计
+   ============================================ */
+
+body.light-theme .modern-header,
+body.light-theme .glass-header {
+  background: var(--bg-card) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  box-shadow: var(--shadow-xs) !important;
+}
+
+body.dark-theme .modern-header,
+body.dark-theme .glass-header {
+  background: var(--bg-card) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  box-shadow: var(--shadow-xs) !important;
+}
+
+/* 移除装饰性元素 */
+.glass-header::after,
+.glass-header::before,
+.glass-sider::before {
+  display: none !important;
+}
+
+.deco-line,
+.deco-dot {
+  display: none !important;
+}
+
+/* 页面标题 */
+.page-title {
+  color: var(--text-primary) !important;
+  background: none !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+}
+
+/* 面包屑图标 */
+.breadcrumb-icon {
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--color-primary) !important;
+  border-radius: var(--border-radius) !important;
+}
+
+/* 主题切换按钮 */
+.theme-toggle-button,
+.user-button {
+  color: var(--text-secondary) !important;
+}
+
+.theme-toggle-button .n-icon,
+.user-button .n-icon {
+  color: var(--text-secondary) !important;
+}
+
+.toggle-track {
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius-lg) !important;
+}
+
+/* 用户菜单 */
+.user-profile {
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+  transition: all var(--transition-fast) !important;
+}
+
+.user-profile:hover {
+  background: var(--bg-hover) !important;
+  border-color: var(--border-color) !important;
+}
+
+.avatar {
+  background: var(--color-primary-light) !important;
+  color: var(--color-primary) !important;
+}
+
+.user-name {
+  color: var(--text-primary) !important;
+}
+
+.user-role {
+  color: var(--text-muted) !important;
+}
+
+.dropdown-arrow {
+  color: var(--text-muted) !important;
+}
+
+
+/* ============================================
+   内容区域样式
+   ============================================ */
+
+.modern-content {
+  background: transparent !important;
+}
+
+/* ============================================
+   标题样式
+   ============================================ */
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary) !important;
+}
+
+/* ============================================
+   文字样式
+   ============================================ */
+
+p, .n-text {
+  color: var(--text-secondary) !important;
+}
+
+/* 渐变文字 - 简化为纯色 */
+.gradient-text {
+  color: var(--text-primary) !important;
+  background: none !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+}
+
+/* 副标题和区块标题 */
+.subtitle,
+.section-title,
+.card-title,
+.welcome-subtitle {
+  color: var(--text-secondary) !important;
+}
+
+/* 区块标题容器 */
+.section-title {
+  background: var(--bg-card) !important;
+  box-shadow: var(--shadow-sm) !important;
+  border-radius: var(--border-radius) !important;
+}
+
+.section-title h2 {
+  color: var(--text-primary) !important;
+}
+
+/* ============================================
+   表格样式 - 简约设计
+   ============================================ */
+
+.modern-table {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius-md) !important;
+}
+
+.n-data-table-th {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  font-weight: 500 !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+.n-data-table-td {
+  color: var(--text-secondary) !important;
+  background: var(--bg-card) !important;
+  border-bottom: 1px solid var(--border-color-light) !important;
+}
+
+.n-data-table-tr:hover .n-data-table-td {
+  background: var(--bg-hover) !important;
+}
+
+/* ============================================
+   按钮和组件样式
+   ============================================ */
+
+.n-button,
+.n-button-group,
+.n-descriptions-item-label,
+.n-descriptions-item-content,
+.n-alert,
+.n-card .n-card-header__main,
+.n-space,
+.n-grid-item {
+  color: var(--text-secondary) !important;
+}
+
+/* ============================================
+   输入框样式
+   ============================================ */
+
+.n-input {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+}
+
+.n-input input {
+  color: var(--text-primary) !important;
+}
+
+/* ============================================
+   代码块样式
+   ============================================ */
+
+.n-code,
+.api-code {
+  background: var(--bg-secondary) !important;
+  color: var(--color-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius-sm) !important;
+}
+
+/* ============================================
+   活动列表样式
+   ============================================ */
+
+.activity-item {
+  background: var(--bg-secondary) !important;
+  border-radius: var(--border-radius) !important;
+  transition: background var(--transition-fast) !important;
+}
+
+.activity-item:hover {
+  background: var(--bg-hover) !important;
+}
+
+.activity-model {
+  color: var(--text-primary) !important;
+}
+
+.activity-details {
+  color: var(--text-muted) !important;
+}
+
+.activity-tokens {
+  color: var(--color-primary) !important;
+}
+
+.activity-duration {
+  color: var(--color-success) !important;
+}
+
+.activity-time {
+  color: var(--text-muted) !important;
+}
+
+/* ============================================
+   响应式设计
+   ============================================ */
+
+@media (max-width: 768px) {
+  :root {
+    --spacing-lg: 16px;
+    --spacing-xl: 24px;
+  }
+  
+  .glass-card {
+    border-radius: var(--border-radius) !important;
+  }
+
+  /* Ensure minimum touch target size for interactive elements */
+  .n-button,
+  .n-menu-item,
+  .n-dropdown-option,
+  .n-select,
+  .n-input,
+  .n-checkbox,
+  .n-radio,
+  .n-switch {
+    min-height: 44px !important;
+  }
+
+  /* Touch-friendly menu items */
+  .modern-menu .n-menu-item,
+  .glass-menu .n-menu-item {
+    min-height: 44px !important;
+  }
+
+  :deep(.n-menu-item-content) {
+    min-height: 44px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+  }
+
+  /* Smaller screens need larger touch targets */
+  .n-button {
+    min-height: 44px !important;
+    padding: var(--spacing-sm) var(--spacing-md) !important;
+  }
+}
+
+/* ============================================
+   触摸设备优化
+   ============================================ */
+
+@media (hover: none) and (pointer: coarse) {
+  /* Remove hover effects on touch devices */
+  .glass-card:hover {
+    transform: none;
+  }
+
+  .glass-card:active {
+    transform: scale(0.98);
+  }
+
+  /* Ensure all interactive elements have proper touch feedback */
+  .n-button:active,
+  .n-menu-item:active,
+  .action-card:active {
+    transform: scale(0.98);
+  }
+
+  /* Smooth scrolling for touch devices */
+  .main-content,
+  .calls-table-container {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+}
+

@@ -12,17 +12,41 @@ type ModelConfig struct {
 func GetModelConfigs() map[string]ModelConfig {
 	return map[string]ModelConfig{
 		// OpenAI GPT-5 系列
+		"gpt-5.2": {
+			ID:           "gpt-5.2",
+			Provider:     "OpenAI",
+			MaxTokens:    8192,
+			ContextWindow: 512000,
+		},
 		"gpt-5": {
 			ID:           "gpt-5",
 			Provider:     "OpenAI",
 			MaxTokens:    4096,
 			ContextWindow: 400000,
 		},
+		"gpt-5.1": {
+			ID:           "gpt-5.1",
+			Provider:     "OpenAI",
+			MaxTokens:    8192,
+			ContextWindow: 500000,
+		},
 		"gpt-5-codex": {
 			ID:           "gpt-5-codex",
 			Provider:     "OpenAI Codex",
 			MaxTokens:    4096,
 			ContextWindow: 192000,
+		},
+		"gpt-5.1-codex": {
+			ID:           "gpt-5.1-codex",
+			Provider:     "OpenAI Codex",
+			MaxTokens:    8192,
+			ContextWindow: 256000,
+		},
+		"gpt-5.1-codex-max": {
+			ID:           "gpt-5.1-codex-max",
+			Provider:     "OpenAI Codex",
+			MaxTokens:    8192,
+			ContextWindow: 256000,
 		},
 		"gpt-5-mini": {
 			ID:           "gpt-5-mini",
@@ -94,6 +118,18 @@ func GetModelConfigs() map[string]ModelConfig {
 			MaxTokens:    4096,
 			ContextWindow: 200000,
 		},
+		"claude-4.5-opus": {
+			ID:           "claude-4.5-opus",
+			Provider:     "Anthropic Claude",
+			MaxTokens:    8192,
+			ContextWindow: 1000000,
+		},
+		"claude-4.5-haiku": {
+			ID:           "claude-4.5-haiku",
+			Provider:     "Anthropic Claude",
+			MaxTokens:    8192,
+			ContextWindow: 200000,
+		},
 		
 		// Google Gemini 系列
 		"gemini-2.5-pro": {
@@ -107,6 +143,12 @@ func GetModelConfigs() map[string]ModelConfig {
 			Provider:     "Google Gemini",
 			MaxTokens:    8192,
 			ContextWindow: 1000000,
+		},
+		"gemini-3-pro-preview": {
+			ID:           "gemini-3-pro-preview",
+			Provider:     "Google Gemini",
+			MaxTokens:    8192,
+			ContextWindow: 2000000,
 		},
 		
 		// OpenAI O-Series
